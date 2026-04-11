@@ -10,6 +10,7 @@ const flash = session.flash
 const isLoggedIn = session.isLoggedIn
 const globalSearch = ref('')
 
+// Format uang ke dalam format Rupiah Indonesia
 const formatter = new Intl.NumberFormat('id-ID', {
   style: 'currency',
   currency: 'IDR',
