@@ -837,6 +837,7 @@ def admin_add_balance(
     wallet = ensure_wallet(db, target.id)
     amount = to_decimal(payload.amount)
     wallet.balance = to_decimal(wallet.balance) + amount
+    db.add(wallet)
 
     mutation = WalletMutation(
         wallet_id=wallet.id,
@@ -877,6 +878,7 @@ def admin_deduct_balance(
         raise HTTPException(status_code=400, detail="Saldo tidak cukup")
 
     wallet.balance = to_decimal(wallet.balance) - amount
+    db.add(wallet)
 
     mutation = WalletMutation(
         wallet_id=wallet.id,

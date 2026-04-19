@@ -16,6 +16,89 @@ const form = reactive({
   stock: 1,
 })
 
+const editForm = reactive({
+  id: null,
+  name: '',
+  description: '',
+  image_url: '',
+  price: 0,
+  stock: 1,
+})
+
+const isUploadingEdit = ref(false)
+const fileInputEdit = ref(null)
+
+async function handleEditImageUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  isUploadingEdit.value = true
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    const res = await session.api('/products/upload', {
+      method: 'POST',
+      headers: session.authHeaders(),
+      body: formData,
+    })
+    editForm.image_url = res.url
+  } catch (err) {
+    session.setFlash('Gagal mengunggah foto: ' + err.message, 'error')
+  } finally {
+    isUploadingEdit.value = false
+  }
+}
+
+function startEditProduct(item) {
+  editForm.id = item.id
+  editForm.name = item.name
+  editForm.description = item.description
+  editForm.image_url = item.image_url
+  editForm.price = parseFloat(item.price)
+  editForm.stock = parseInt(item.stock, 10)
+  activeTab.value = 'edit'
+}
+
+async function submitEditProduct() {
+  if (Number(editForm.price) <= 0 || Number(editForm.stock) < 0) {
+    session.setFlash('Harga harus lebih dari 0 dan stok minimal 0.', 'error')
+    return
+  }
+
+  try {
+    await session.api(`/products/${editForm.id}`, {
+      method: 'PATCH',
+      headers: session.authHeaders(),
+      body: JSON.stringify({
+        ...editForm,
+        price: Number(editForm.price),
+        stock: Number(editForm.stock),
+      }),
+    })
+
+    session.setFlash('Produk berhasil diperbarui.', 'success')
+    activeTab.value = 'products'
+    await loadMyProducts()
+  } catch (error) {
+    session.setFlash(error.message, 'error')
+  }
+}
+
+async function deleteProduct(item) {
+  if (!confirm('Anda yakin ingin menghapus produk ini?')) return
+  try {
+    await session.api(`/products/${item.id}`, {
+      method: 'DELETE',
+      headers: session.authHeaders(),
+    })
+    session.setFlash('Produk berhasil dihapus.', 'success')
+    await loadMyProducts()
+  } catch (error) {
+    session.setFlash(error.message, 'error')
+  }
+}
+
 const me = session.me
 
 const statusTextMap = {
@@ -212,6 +295,7 @@ onMounted(() => {
           <h2 v-if="activeTab === 'dashboard'">Dashboard Toko</h2>
           <h2 v-if="activeTab === 'products'">Daftar Produk Aktif</h2>
           <h2 v-if="activeTab === 'add'">Tambah Produk Baru</h2>
+          <h2 v-if="activeTab === 'edit'">Edit Produk</h2>
           <h2 v-if="activeTab === 'orders'">Kelola Pesanan Pelanggan</h2>
           <p class="subtle">Kelola toko Anda dengan mudah layaknya profesional.</p>
         </div>
@@ -283,6 +367,7 @@ onMounted(() => {
                   <th>Info Produk</th>
                   <th>Harga Satuan</th>
                   <th>Stok Tersedia</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -298,9 +383,15 @@ onMounted(() => {
                   <td style="vertical-align: middle;">
                      <span class="badge" :class="item.stock > 0 ? 'ok' : 'warn'">{{ item.stock > 0 ? 'Tersedia' : 'Habis' }}: {{ item.stock }}</span>
                   </td>
+                  <td style="vertical-align: middle;">
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                      <button class="btn accent" style="padding: 4px 8px; font-size: 0.8rem;" @click="startEditProduct(item)">Edit</button>
+                      <button class="btn accent" style="padding: 4px 8px; font-size: 0.8rem; background: var(--warn); color: white;" @click="deleteProduct(item)">Hapus</button>
+                    </div>
+                  </td>
                 </tr>
                 <tr v-if="!myProducts.length">
-                  <td colspan="3" style="text-align: center; padding: 40px; color: var(--muted);">
+                  <td colspan="4" style="text-align: center; padding: 40px; color: var(--muted);">
                     Belum ada produk jualan. <br/>
                     <button class="btn primary" style="margin-top: 14px;" @click="activeTab = 'add'">Tambah Produk Sekarang</button>
                   </td>
@@ -345,6 +436,49 @@ onMounted(() => {
         </div>
 
         <button class="btn primary" style="margin-top: 10px; font-size: 1.1rem; padding: 12px;" @click="submitProduct" :disabled="!form.name || !form.price">Simpan Produk Baru</button>
+      </article>
+
+      <!-- TAB: EDIT PRODUCT -->
+      <article v-if="activeTab === 'edit'" class="panel stack" style="max-width: 600px;">
+        <label>
+          <span style="font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: block;">Nama Produk</span>
+          <input v-model="editForm.name" class="input" type="text" placeholder="Contoh: Sepatu Sneakers Pria" required />
+        </label>
+
+        <label>
+          <span style="font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: block;">Deskripsi</span>
+          <textarea v-model="editForm.description" class="textarea" placeholder="Jelaskan detail ukuran, bahan, dll..." required />
+        </label>
+
+        <label>
+          <span style="font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: block;">Foto Produk</span>
+          <input type="file" ref="fileInputEdit" @change="handleEditImageUpload" class="input" accept="image/*" :disabled="isUploadingEdit" />
+          <div v-if="isUploadingEdit" style="margin-top: 8px; font-size: 0.85rem; color: var(--primary);">Sedang mengunggah foto...</div>
+          <div v-if="editForm.image_url && !isUploadingEdit" style="margin-top: 10px;"> 
+             <img :src="editForm.image_url" style="max-width: 150px; border-radius: 6px; border: 1px solid var(--line);" />
+          </div>
+        </label>
+
+        <div class="grid two">
+          <label>
+            <span style="font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: block;">Harga (Rp)</span>
+            <input v-model.number="editForm.price" class="input" type="number" min="1" required />
+          </label>
+
+          <label>
+            <span style="font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: block;">Stok</span>
+            <input v-model.number="editForm.stock" class="input" type="number" min="0" required />
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button class="btn primary" style="font-size: 1rem; padding: 12px; flex: 1;" @click="submitEditProduct" :disabled="isUploadingEdit">
+            Simpan Perubahan
+          </button>
+          <button class="btn ghost" style="font-size: 1rem; padding: 12px;" @click="activeTab = 'products'">
+            Batal
+          </button>
+        </div>
       </article>
 
       <!-- TAB: ORDERS -->
