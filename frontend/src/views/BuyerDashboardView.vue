@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <main class="stack" style="max-width: 1200px; margin: 0 auto;">
     <div class="panel inline" style="justify-content: space-between">
       <div class="stack" style="gap: 6px">
@@ -13,10 +13,22 @@
 
     <!-- CATEGORY PILLS -->
     <div class="category-row" style="margin-top: 10px; margin-bottom: 20px;">
-      <button class="category-pill" style="cursor: pointer; border: none; font-weight: 700; background: var(--primary); color: white;">
+      <button
+        class="category-pill"
+        :class="{ active: selectedCategory === '' }"
+        @click="setCategory('')"
+      >
         Semua Kategori
       </button>
-      <span v-for="cat in categoryPills" :key="cat" class="category-pill">#{{ cat }}</span>
+      <button
+        v-for="cat in categoryPills"
+        :key="cat"
+        class="category-pill"
+        :class="{ active: selectedCategory === cat }"
+        @click="setCategory(cat)"
+      >
+        #{{ cat }}
+      </button>
     </div>
 
     <!-- PRODUCT CATALOG -->
@@ -56,6 +68,7 @@ const route = useRoute()
 const router = useRouter()
 const products = ref([])
 const keyword = ref(route.query.q || '')
+const selectedCategory = ref('')
 const productQty = ref({})
 const loading = ref(false)
 
@@ -82,17 +95,31 @@ const categoryPills = computed(() => {
 
 const filteredProducts = computed(() => {
   const search = keyword.value.trim().toLowerCase()
+  const category = selectedCategory.value.trim().toLowerCase()
+
   return products.value.filter((item) => {
     // Sembunyikan barang dagangan sendiri jika login
     if (me.value && item.seller_id === me.value.id) {
        return false
     }
+
+    const normalizedName = item.name.toLowerCase()
+
+    if (category && !normalizedName.includes(category)) {
+      return false
+    }
+
     if (!search) {
       return true
     }
-    return item.name.toLowerCase().includes(search)
+
+    return normalizedName.includes(search)
   })
 })
+
+function setCategory(category) {
+  selectedCategory.value = category
+}
 
 function formatMoney(amount) {
   return formatter.format(Number(amount || 0))
