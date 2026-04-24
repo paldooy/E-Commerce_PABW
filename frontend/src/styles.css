@@ -515,6 +515,21 @@ h4 {
   padding: 6px 10px;
   font-size: 0.85rem;
   color: #7c523f;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s ease;
+}
+
+.category-pill:hover {
+  border-color: #efb18f;
+  background: #fff1e8;
+}
+
+.category-pill.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
 }
 
 .mini-list {
