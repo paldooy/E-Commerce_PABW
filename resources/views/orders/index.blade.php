@@ -52,7 +52,7 @@
                     <div>
                         <p class="text-lg font-semibold">{{ $item->nama_produk_snapshot }}</p>
                         <p class="text-sm text-slate-400">Pembeli: {{ $item->order->buyer->nama_lengkap }}</p>
-                        <p class="text-xs text-slate-500">Jumlah: {{ $item->jumlah }} x Rp {{ number_format($item->harga_snapshot, 0, ',', '.') }}</p>
+                        <p class="text-xs text-slate-500">Jumlah: {{ $item->jumlah }} x Rp {{ number_format($item->harga_satuan_snapshot, 0, ',', '.') }}</p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-slate-400">Status Saat Ini</p>

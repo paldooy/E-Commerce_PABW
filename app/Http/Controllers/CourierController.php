@@ -11,17 +11,42 @@ use Illuminate\View\View;
 
 class CourierController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $courier = $this->requireRole(['kurir']);
-        $items = OrderItem::with('order.buyer', 'product', 'seller')
-            ->whereIn('status', ['menunggu_kurir', 'sedang_dikirim', 'dikirim_balik'])
+        $tab = $request->query('tab', 'tugas');
+
+        if ($tab === 'tugas') {
+            // Menunggu kurir mengambil barang (dari penjual untuk pembeli, atau ditarik dari pembeli untuk retur)
+            $items = OrderItem::with('order.buyer', 'product', 'seller')
+                ->whereIn('status', ['menunggu_kurir', 'dikirim_balik'])
+                ->orderByDesc('updated_at')
+                ->get();
+        } elseif ($tab === 'berjalan') {
+            // Sedang diantarkan
+            $items = OrderItem::with('order.buyer', 'product', 'seller')
+                ->where('status', 'sedang_dikirim')
+                ->orderByDesc('updated_at')
+                ->get();
+        } else {
+            // Riwayat pengantaran: semua yang telah berhasil diubah status log-nya oleh kurir ini menjadi titik akhir pengantaran
+            $items = OrderItem::with(['order.buyer', 'product', 'seller', 'statusLogs' => function ($query) use ($courier) {
+                $query->where('diubah_oleh_account_id', $courier->id)
+                      ->whereIn('status_baru', ['sampai_di_tujuan', 'menunggu_penjual'])
+                      ->orderByDesc('created_at');
+            }])
+            ->whereHas('statusLogs', function ($query) use ($courier) {
+                $query->where('diubah_oleh_account_id', $courier->id)
+                      ->whereIn('status_baru', ['sampai_di_tujuan', 'menunggu_penjual']);
+            })
             ->orderByDesc('updated_at')
             ->get();
+        }
 
         return view('courier.index', [
             'courier' => $courier,
             'items' => $items,
+            'tab' => $tab,
         ]);
     }
 

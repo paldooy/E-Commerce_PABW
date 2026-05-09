@@ -63,7 +63,7 @@
                     @if($currentAccount && $currentAccount->role === 'pengguna')
                         @php
                             $cart = \App\Models\Cart::where('buyer_id', $currentAccount->id)->first();
-                            $cartCount = $cart ? $cart->items()->sum('kuantitas') : 0;
+                            $cartCount = $cart ? $cart->items()->sum('jumlah') : 0;
                             $wallet = \App\Models\Wallet::where('account_id', $currentAccount->id)->first();
                             $balance = $wallet ? $wallet->saldo : 0;
                         @endphp

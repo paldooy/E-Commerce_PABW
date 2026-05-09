@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdminUserController extends Controller
@@ -38,12 +39,24 @@ class AdminUserController extends Controller
 
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:120'],
-            'username' => ['required', 'string', 'max:60', 'unique:accounts,username'],
-            'email' => ['required', 'email', 'max:120', 'unique:accounts,email'],
+            'username' => ['required', 'string', 'max:60', Rule::unique('accounts', 'username')->withoutTrashed()],
+            'email' => ['required', 'email', 'max:120', Rule::unique('accounts', 'email')->withoutTrashed()],
             'no_hp' => ['required', 'string', 'max:25'],
             'password' => ['required', 'string', 'min:6'],
             'status_aktif' => ['nullable', 'boolean'],
         ]);
+
+        // Bersihkan data sampah yang menyebabkan bentrok di level database
+        $trashedAccounts = Account::onlyTrashed()
+            ->where('username', $data['username'])
+            ->orWhere('email', $data['email'])
+            ->get();
+
+        foreach ($trashedAccounts as $trashed) {
+            $trashed->username = $trashed->username . '_del_' . $trashed->id;
+            $trashed->email = 'del_' . $trashed->id . '_' . $trashed->email;
+            $trashed->save();
+        }
 
         $user = Account::create([
             'role' => 'pengguna',
@@ -88,7 +101,7 @@ class AdminUserController extends Controller
 
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:120', 'unique:accounts,email,' . $user->id],
+            'email' => ['required', 'email', 'max:120', Rule::unique('accounts', 'email')->ignore($user->id)->withoutTrashed()],
             'no_hp' => ['required', 'string', 'max:25'],
             'status_aktif' => ['required', 'boolean'],
             'password' => ['nullable', 'string', 'min:6'],
