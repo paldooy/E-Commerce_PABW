@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@layer components {
+    .glass-panel {
+        @apply bg-white/5 border border-white/10 backdrop-blur-xl;
+    }
+
+    .glass-card {
+        @apply bg-slate-900/60 border border-slate-800;
+    }
+
+    .glass-button {
+        @apply bg-white/10 border border-white/15 text-slate-100 hover:bg-white/20;
+    }
+
+    .glass-button-emerald {
+        @apply bg-emerald-500/80 text-white hover:bg-emerald-400/80;
+    }
+}
