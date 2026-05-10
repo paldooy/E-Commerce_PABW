@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\AIDescriptionController;
 use App\Http\Controllers\AdminCourierController;
 use App\Http\Controllers\AdminProductController;
 use App\Http\Controllers\AdminUserController;
@@ -46,6 +46,8 @@ Route::prefix('/seller')->name('seller.')->group(function () {
     Route::put('/products/{product}', [SellerProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [SellerProductController::class, 'destroy'])->name('products.destroy');
 
+    
+    Route::post('/products/generate-ai', [AIDescriptionController::class, 'generate'])->name('products.generateAI');
     Route::post('/orders/{item}/process', [SellerOrderController::class, 'process'])->name('orders.process');
     Route::post('/orders/{item}/call-courier', [SellerOrderController::class, 'callCourier'])->name('orders.callCourier');
     Route::post('/orders/{item}/approve-return', [SellerOrderController::class, 'approveReturn'])->name('orders.approveReturn');

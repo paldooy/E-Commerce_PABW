@@ -11,7 +11,11 @@
         </div>
         <div>
             <label class="text-sm font-medium text-slate-300">Deskripsi</label>
-            <textarea name="deskripsi" class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-100 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/50" rows="4" required></textarea>
+            <div class="flex gap-2">
+                <textarea id="deskripsi" name="deskripsi" class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-100 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/50" rows="4" required></textarea>
+                <button type="button" id="generate-desc" class="glass-button glass-button-emerald h-fit px-3 py-1 text-xs font-semibold">AI Generate</button>
+            </div>
+            <p id="desc-loading" class="text-xs text-emerald-400 mt-1 hidden">Menghasilkan deskripsi persuasif...</p>
         </div>
         <div>
             <label class="text-sm font-medium text-slate-300">Kategori</label>
@@ -111,5 +115,59 @@
         previewContainer.classList.add('hidden');
         dropArea.classList.remove('hidden');
     });
+// AI Generate Deskripsi
+document.getElementById('generate-desc').addEventListener('click', async function() {
+    const namaInput = document.querySelector('input[name="nama_produk"]');
+    const kategoriInput = document.querySelector('select[name="kategori"]');
+    const textarea = document.getElementById('deskripsi');
+    const loading = document.getElementById('desc-loading');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+
+    // Validasi: Jangan kirim request jika nama produk kosong
+    if (!namaInput.value.trim()) {
+        alert('Tolong isi Nama Produk terlebih dahulu!');
+        namaInput.focus();
+        return;
+    }
+
+    // Tampilkan loading dan matikan tombol agar tidak di-klik berkali-kali
+    loading.classList.remove('hidden');
+    this.disabled = true;
+
+    try {
+        const res = await fetch('{{ route("seller.products.generateAI") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken ? csrfToken.content : '',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                nama_produk: namaInput.value,
+                kategori: kategoriInput.value,
+                ukuran: '' // Bisa ditambah jika nanti ada input ukuran
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            // Jika sukses, masukkan teks ke textarea
+            textarea.value = data.deskripsi || '';
+        } else {
+            // Jika server kirim error (misal API Key salah)
+            alert('Gagal: ' + (data.message || 'Terjadi kesalahan sistem AI.'));
+        }
+
+    } catch (e) {
+        console.error(e);
+        alert('Gagal menghubungkan ke server. Cek koneksi internet atau server Laravel kamu.');
+    } finally {
+        // Sembunyikan loading dan aktifkan tombol kembali
+        loading.classList.add('hidden');
+        this.disabled = false;
+    }
+});
+
 </script>
 @endsection
