@@ -12,10 +12,17 @@
 <div class="space-y-4">
     @forelse ($cart->items as $item)
         <div class="glass-card flex flex-col gap-4 rounded-2xl p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-            <div>
-                <h2 class="text-lg font-semibold">{{ $item->product->nama_produk }}</h2>
-                <p class="text-sm text-slate-400">Harga: Rp {{ number_format($item->product->harga, 0, ',', '.') }}</p>
-                <p class="text-xs text-slate-500">Stok tersedia: {{ $item->product->stok }}</p>
+            <div class="flex items-center gap-4">
+                @if($item->product->url_gambar)
+                    <img src="{{ $item->product->url_gambar }}" alt="{{ $item->product->nama_produk }}" class="h-16 w-16 rounded-lg object-cover" />
+                @else
+                    <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-xs text-slate-500">No Img</div>
+                @endif
+                <div>
+                    <h2 class="text-lg font-semibold">{{ $item->product->nama_produk }}</h2>
+                    <p class="text-sm text-slate-400">Harga: Rp {{ number_format($item->product->harga, 0, ',', '.') }}</p>
+                    <p class="text-xs text-slate-500">Stok tersedia: {{ $item->product->stok }}</p>
+                </div>
             </div>
             <div class="flex flex-col gap-2 md:items-end">
                 <form method="POST" action="{{ route('cart.update', $item) }}" class="flex items-center gap-2">

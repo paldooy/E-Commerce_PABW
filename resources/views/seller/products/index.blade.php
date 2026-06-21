@@ -13,9 +13,16 @@
     @forelse ($products as $product)
         <div class="glass-card rounded-2xl p-4 shadow-sm">
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <p class="text-lg font-semibold">{{ $product->nama_produk }}</p>
-                    <p class="text-sm text-slate-400">Stok: {{ $product->stok }} | Status: {{ $product->status }}</p>
+                <div class="flex items-center gap-4">
+                    @if($product->url_gambar)
+                        <img src="{{ $product->url_gambar }}" alt="{{ $product->nama_produk }}" class="h-16 w-16 rounded-lg object-cover" />
+                    @else
+                        <div class="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-800 text-xs text-slate-500">No Img</div>
+                    @endif
+                    <div>
+                        <p class="text-lg font-semibold">{{ $product->nama_produk }}</p>
+                        <p class="text-sm text-slate-400">Stok: {{ $product->stok }} | Status: {{ $product->status }}</p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <a class="glass-button rounded-lg px-3 py-1 text-sm" href="{{ route('seller.products.edit', $product) }}">Edit</a>

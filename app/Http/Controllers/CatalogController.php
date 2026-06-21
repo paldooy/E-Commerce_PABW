@@ -27,4 +27,14 @@ class CatalogController extends Controller
             'kategoriList' => $kategoriList,
         ]);
     }
+
+    public function show(Product $product): View
+    {
+        $account = $this->currentAccount();
+        
+        return view('catalog.show', [
+            'account' => $account,
+            'product' => $product,
+        ]);
+    }
 }

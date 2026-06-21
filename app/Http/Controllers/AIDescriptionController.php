@@ -11,51 +11,84 @@ class AIDescriptionController extends Controller
     {
         $request->validate([
             'nama_produk' => 'required',
+            'deskripsi_kasar' => 'required',
             'kategori' => 'nullable',
-            'ukuran' => 'nullable',
+            'foto_produk' => 'required|image|max:2048',
         ]);
 
         $nama = $request->input('nama_produk');
+        $deskripsiKasar = $request->input('deskripsi_kasar');
         $kategori = $request->input('kategori');
-        $ukuran = $request->input('ukuran');
 
-        $prompt = "Buatkan deskripsi produk yang persuasif dan menarik untuk marketplace. Info produk: Nama: $nama, Kategori: $kategori, Ukuran: $ukuran. Buat dalam 1 paragraf saja dalam Bahasa Indonesia.";
+        $prompt = "Tulis ulang dan parafrase gambaran kasar berikut menjadi deskripsi produk marketplace yang sangat menarik, rapi, dan persuasif. Hindari kalimat template yang kaku atau pasaran seperti 'Miliki segera' atau 'Dapatkan penawaran'. Gunakan gaya bahasa yang natural, luwes, dan menonjolkan nilai jual produk berdasarkan informasi berikut:\n\nNama Produk: $nama\nKategori: $kategori\nGambaran Kasar: $deskripsiKasar\n\n(Tolong perhatikan foto produk jika ada untuk menambah detail). Buat menjadi 1 paragraf utuh yang mengalir dengan baik dalam Bahasa Indonesia. jangan hanya copy paste deskripsi dari input pengguna, tetapi dibuat ulang dengan makna yang sama, gaya bahasa yang menarik pembeli";
 
         $apiKey = env('GEMINI_API_KEY');
         
-        // Dikembangkan ke endpoint v1beta dan model 2.0 yang tervalidasi ada di akunmu
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-001:generateContent?key=" . $apiKey;        
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=" . $apiKey;        
+
+        $parts = [
+            ['text' => $prompt]
+        ];
+
+        if ($request->hasFile('foto_produk')) {
+            $file = $request->file('foto_produk');
+            $parts[] = [
+                'inline_data' => [
+                    'mime_type' => $file->getMimeType(),
+                    'data' => base64_encode(file_get_contents($file->getRealPath()))
+                ]
+            ];
+        }
 
         try {
             $response = Http::withoutVerifying()->post($url, [
                 'contents' => [
-                    ['parts' => [['text' => $prompt]]]
+                    ['parts' => $parts]
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.7,
+                    'temperature' => 0.8,
                     'maxOutputTokens' => 300,
                 ]
             ]);
 
             $data = $response->json();
 
-            // Jika sukses mendapatkan respon teks dari Google Gemini
+            \Log::info('Gemini status: ' . $response->status());
+            \Log::info('Gemini response: ' . json_encode($data));
+
             if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
                 return response()->json([
                     'deskripsi' => trim($data['candidates'][0]['content']['parts'][0]['text']),
                 ]);
             }
 
-            // FALLBACK: Tulisan "(Generated via Local Backup AI)" sudah dihapus dari sini
-            $mockDesc = "Miliki segera $nama kualitas terbaik untuk kategori " . ($kategori ?? 'Umum') . "! Produk ini dirancang dengan material premium yang kokoh, fungsional, dan memiliki estetika modern yang sangat cocok untuk memenuhi kebutuhan Anda. Dapatkan penawaran harga terbaik hanya di HomeSupply.co sekarang juga!";
+
+            if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                return response()->json([
+                    'deskripsi' => trim($data['candidates'][0]['content']['parts'][0]['text']),
+                ]);
+            }
+
+            // Jika API merespon tetapi format salah / limit
+            $templates = [
+                "Hadirkan sentuhan baru dengan $nama. Keunggulan produk ini: $deskripsiKasar. Sangat cocok untuk Anda yang mengutamakan kualitas di kategori " . strtolower($kategori ?? 'ini') . ".",
+                "Jadikan $nama sebagai pilihan utama Anda. Detail produk: $deskripsiKasar. Didesain secara khusus untuk memberikan fungsionalitas dan nilai estetika yang tinggi.",
+                "Produk $nama ini merupakan solusi yang tepat. Spesifikasi singkat: $deskripsiKasar. Jangan lewatkan kesempatan untuk mendapatkan produk pilihan ini."
+            ];
+            $mockDesc = $templates[array_rand($templates)];
 
             return response()->json([
                 'deskripsi' => trim($mockDesc),
             ]);
 
         } catch (\Exception $e) {
-            // FALLBACK: Tulisan "(Generated via Local Backup AI)" juga sudah dihapus dari sini
-            $mockDesc = "Miliki segera $nama kualitas terbaik untuk kategori " . ($kategori ?? 'Umum') . "! Produk ini dirancang dengan material premium yang kokoh, fungsional, dan memiliki estetika modern yang sangat cocok untuk memenuhi kebutuhan Anda. Dapatkan penawaran harga terbaik hanya di HomeSupply.co sekarang juga!";
+            // Jika API gagal dihubungi sama sekali (tanpa koneksi / tanpa API key)
+            $templates = [
+                "Hadirkan sentuhan baru dengan $nama. Keunggulan produk ini: $deskripsiKasar. Sangat cocok untuk Anda yang mengutamakan kualitas di kategori " . strtolower($kategori ?? 'ini') . ".",
+                "Jadikan $nama sebagai pilihan utama Anda. Detail produk: $deskripsiKasar. Didesain secara khusus untuk memberikan fungsionalitas dan nilai estetika yang tinggi.",
+                "Produk $nama ini merupakan solusi yang tepat. Spesifikasi singkat: $deskripsiKasar. Jangan lewatkan kesempatan untuk mendapatkan produk pilihan ini."
+            ];
+            $mockDesc = $templates[array_rand($templates)];
 
             return response()->json([
                 'deskripsi' => trim($mockDesc),

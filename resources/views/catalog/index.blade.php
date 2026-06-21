@@ -25,18 +25,22 @@
 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
     @forelse ($products as $product)
         <div class="glass-card flex flex-col rounded-2xl p-4 shadow-sm hover:border-emerald-500/30 transition-colors">
-            <div class="h-40 w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 mb-4 group relative">
-                @if ($product->url_gambar)
-                    <img class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src="{{ $product->url_gambar }}" alt="{{ $product->nama_produk }}" />
-                @else
-                    <div class="flex h-full items-center justify-center text-xs text-slate-400">Tanpa foto</div>
-                @endif
-                @if($product->kategori)
-                    <div class="absolute top-2 left-2 rounded-full bg-slate-900/80 px-2 py-1 text-[10px] font-semibold text-emerald-400 backdrop-blur">{{ $product->kategori }}</div>
-                @endif
-            </div>
+            <a href="{{ route('catalog.show', $product) }}" class="block">
+                <div class="h-40 w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 mb-4 group relative">
+                    @if ($product->url_gambar)
+                        <img class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src="{{ $product->url_gambar }}" alt="{{ $product->nama_produk }}" />
+                    @else
+                        <div class="flex h-full items-center justify-center text-xs text-slate-400">Tanpa foto</div>
+                    @endif
+                    @if($product->kategori)
+                        <div class="absolute top-2 left-2 rounded-full bg-slate-900/80 px-2 py-1 text-[10px] font-semibold text-emerald-400 backdrop-blur">{{ $product->kategori }}</div>
+                    @endif
+                </div>
+            </a>
             <div class="flex-1">
-                <h2 class="text-lg font-bold line-clamp-1" title="{{ $product->nama_produk }}">{{ $product->nama_produk }}</h2>
+                <a href="{{ route('catalog.show', $product) }}" class="block hover:text-emerald-400 transition-colors">
+                    <h2 class="text-lg font-bold line-clamp-1" title="{{ $product->nama_produk }}">{{ $product->nama_produk }}</h2>
+                </a>
                 <div class="flex items-center gap-2 mt-1">
                     <div class="h-5 w-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] text-indigo-400 font-bold border border-indigo-500/50">{{ substr($product->seller->nama_lengkap, 0, 1) }}</div>
                     <p class="text-xs text-slate-400">{{ $product->seller->nama_lengkap }}</p>

@@ -10,10 +10,17 @@
     @foreach ($order->items as $item)
         <div class="glass-card rounded-2xl p-4 shadow-sm">
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <p class="text-lg font-semibold">{{ $item->nama_produk_snapshot }}</p>
-                    <p class="text-sm text-slate-400">Penjual: {{ $item->seller->nama_lengkap }}</p>
-                    <p class="text-sm text-slate-400">Jumlah: {{ $item->jumlah }}</p>
+                <div class="flex items-center gap-4">
+                    @if($item->gambar_produk_snapshot)
+                        <img src="{{ $item->gambar_produk_snapshot }}" alt="{{ $item->nama_produk_snapshot }}" class="h-16 w-16 rounded-lg object-cover" />
+                    @else
+                        <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-xs text-slate-500">No Img</div>
+                    @endif
+                    <div>
+                        <p class="text-lg font-semibold">{{ $item->nama_produk_snapshot }}</p>
+                        <p class="text-sm text-slate-400">Penjual: {{ $item->seller->nama_lengkap }}</p>
+                        <p class="text-sm text-slate-400">Jumlah: {{ $item->jumlah }}</p>
+                    </div>
                 </div>
                 <div class="text-right">
                     <p class="text-sm text-slate-400">Status</p>
